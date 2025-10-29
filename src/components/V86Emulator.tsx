@@ -1,15 +1,22 @@
-import { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useState, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { Terminal, BugOff } from 'lucide-react';
 import { destroyEmulator } from '../utils/v86LabRunner';
 import wasmUrl from 'v86/build/v86.wasm?url';
 import { Language, getLanguageExtension } from '../utils/languages';
+import type { V86 } from 'v86';
 
 interface V86EmulatorProps {
   onReady?: () => void;
   onError?: (error: string) => void;
 }
 
-export const V86Emulator = forwardRef<any, V86EmulatorProps>(({ onReady, onError }, ref) => {
+interface V86EmulatorHandle {
+  writeFile: (path: string, data: string) => Promise<boolean>;
+  clearFile: (path: string) => Promise<boolean>;
+  serial0_send: (data: string) => void;
+}
+
+export const V86Emulator = forwardRef<V86EmulatorHandle, V86EmulatorProps>(({ onReady, onError }, ref) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +25,7 @@ export const V86Emulator = forwardRef<any, V86EmulatorProps>(({ onReady, onError
   const terminalRef = useRef<HTMLDivElement>(null);
   
   // Emulator reference and initialization tracking
-  const emulatorRef = useRef<any>(null);
+  const emulatorRef = useRef<V86 | null>(null);
   const isInitializedRef = useRef<boolean>(false);
 
   // Function to send data to serial0
@@ -30,7 +37,7 @@ export const V86Emulator = forwardRef<any, V86EmulatorProps>(({ onReady, onError
   };
 
   // Function to write a file to the emulator using base64 encoding
-  const writeFile = async (path: string, data: string) => {
+  const writeFile = useCallback(async (path: string, data: string) => {
     if (emulatorRef.current) {
       // Encode the data in base64
       const base64Data = btoa(data);
@@ -43,20 +50,20 @@ export const V86Emulator = forwardRef<any, V86EmulatorProps>(({ onReady, onError
       return true;
     }
     return false;
-  };
+  }, []);
 
-  const clearFile = async (path: string) => {
+  const clearFile = useCallback(async (path: string) => {
     if (emulatorRef.current) {
       emulatorRef.current.serial0_send(`rm -fr ${path}\n`);
       return true;
     }
     return false;
-  };
+  }, []);
 
   // Function to run test command
   const runTest = async (language: Language, code: string) => {
     if (emulatorRef.current && isReady) {
-      var buffer = new Uint8Array(code.length);
+      const buffer = new Uint8Array(code.length);
 
       buffer.set(code.split("").map(function(chr) { return chr.charCodeAt(0); }));
 
@@ -86,7 +93,12 @@ export const V86Emulator = forwardRef<any, V86EmulatorProps>(({ onReady, onError
   useImperativeHandle(ref, () => ({
     writeFile: writeFile,
     runTest: runTest,
-    clearFile: clearFile
+    clearFile: clearFile,
+    serial0_send: (data: string) => {
+      if (emulatorRef.current) {
+        emulatorRef.current.serial0_send(data);
+      }
+    }
   }));
 
   // Handle Enter key in input
@@ -165,9 +177,11 @@ export const V86Emulator = forwardRef<any, V86EmulatorProps>(({ onReady, onError
         };
         
         // Expose emulator globally for console access
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).emulator = emulator;
         
         // Expose writeFile method to window for debugging
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).writeFile = writeFile;
         
 
@@ -177,8 +191,10 @@ export const V86Emulator = forwardRef<any, V86EmulatorProps>(({ onReady, onError
         });
 
         // Listen for serial output
-        emulator.add_listener('serial0-output-byte', (byte: number) => {
-          const char = String.fromCharCode(byte);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        emulator.add_listener('serial0-output-byte', (byte: any) => {
+          const byteNum = typeof byte === 'number' ? byte : 0;
+          const char = String.fromCharCode(byteNum);
           
           // Skip carriage returns (like in serial.html)
           if (char === '\r') {
@@ -202,11 +218,13 @@ export const V86Emulator = forwardRef<any, V86EmulatorProps>(({ onReady, onError
           }, 10);
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         emulator.add_listener('emulator-error', (error: any) => {
+          const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown emulator error');
           console.error('v86 emulator error:', error);
-          setError(error.message || 'Unknown emulator error');
+          setError(errorMessage);
           setIsLoading(false);
-          onError?.(error.message || 'Unknown emulator error');
+          onError?.(errorMessage);
         });
 
 
@@ -231,7 +249,8 @@ export const V86Emulator = forwardRef<any, V86EmulatorProps>(({ onReady, onError
       // Also cleanup the global emulator
       destroyEmulator();
     };
-  }, []); // Empty dependency array - only run once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only run once. onReady and onError are stable callbacks
 
 
   return (

@@ -6,8 +6,10 @@ export interface TestResult {
   details?: string;
 }
 
+import type { V86 } from 'v86';
+
 // Global emulator instance
-let emulator: any = null;
+let emulator: V86 | null = null;
 let isEmulatorReady = false;
 let serialOutputBuffer = '';
 let initializationPromise: Promise<void> | null = null;
@@ -76,9 +78,11 @@ async function performInitialization(): Promise<void> {
           serialOutputBuffer += char;
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         emulator.add_listener('emulator-error', (error: any) => {
-          console.error('v86 emulator error:', error);
-          reject(error);
+          const errorObj = error instanceof Error ? error : new Error(typeof error === 'string' ? error : 'Unknown error');
+          console.error('v86 emulator error:', errorObj);
+          reject(errorObj);
         });
 
         // Set a timeout for initialization

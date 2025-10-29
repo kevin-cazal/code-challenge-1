@@ -1,5 +1,6 @@
 import { Editor } from '@monaco-editor/react';
 import { useRef } from 'react';
+import type * as monaco from 'monaco-editor';
 
 interface CodeEditorProps {
   defaultValue?: string;
@@ -14,9 +15,9 @@ export function CodeEditor({
   theme = 'vs-dark',
   height = '100%',
 }: CodeEditorProps) {
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
-  function handleEditorDidMount(editor: any) {
+  function handleEditorDidMount(editor: monaco.editor.IStandaloneCodeEditor) {
     editorRef.current = editor;
   }
 
@@ -40,7 +41,9 @@ export function CodeEditor({
   );
 }
 
-export function getEditorValue(editorRef: React.RefObject<any>): string {
+// Export utility function (suppress fast-refresh warning as this is intentional)
+// eslint-disable-next-line react-refresh/only-export-components
+export function getEditorValue(editorRef: React.RefObject<monaco.editor.IStandaloneCodeEditor | null>): string {
   if (editorRef.current) {
     return editorRef.current.getValue();
   }

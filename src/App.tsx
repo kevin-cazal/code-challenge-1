@@ -1,10 +1,16 @@
 import { useRef, useState } from 'react';
 import { Editor } from '@monaco-editor/react';
+import type * as monaco from 'monaco-editor';
 import { Play, CheckCircle2, XCircle, Code2 } from 'lucide-react';
-//import { runCodeTest, TestResult } from './utils/wasmRunner';
-import { runCodeTest, TestResult } from './utils/v86LabRunner';
+import { TestResult } from './utils/v86LabRunner';
 import { Language, getLanguageExtension } from './utils/languages';
 import { V86Emulator } from './components/V86Emulator';
+
+interface V86EmulatorHandle {
+  writeFile: (path: string, data: string) => Promise<boolean>;
+  clearFile: (path: string) => Promise<boolean>;
+  serial0_send: (data: string) => void;
+}
 
 
 const defaultCodes: Record<Language, string> = {
@@ -36,13 +42,13 @@ main()`,
 };
 
 function App() {
-  const editorRef = useRef<any>(null);
-  const v86EmulatorRef = useRef<any>(null);
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const v86EmulatorRef = useRef<V86EmulatorHandle | null>(null);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [language, setLanguage] = useState<Language>('python');
 
-  function handleEditorDidMount(editor: any) {
+  function handleEditorDidMount(editor: monaco.editor.IStandaloneCodeEditor) {
     editorRef.current = editor;
   }
 
