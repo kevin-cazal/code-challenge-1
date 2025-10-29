@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+build/
+*.local
+
+# Environment variables
+.env
+.env.local
+.env.production.local
+.env.development.local
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Large binary assets (should be in git LFS or downloaded separately)
+public/images/alpine-rootfs-flat/
+public/images/v86-images*.zip
+public/images/APKINDEX.tar.gz
+public/images/alpine-rootfs.tar
+
+# Cache directories
+.bolt/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
