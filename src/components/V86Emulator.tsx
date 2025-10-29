@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Terminal, BugOff } from 'lucide-react';
 import { destroyEmulator } from '../utils/v86LabRunner';
+import wasmUrl from 'v86/build/v86.wasm?url';
 import { Language, getLanguageExtension } from '../utils/languages';
 
 interface V86EmulatorProps {
@@ -111,7 +112,7 @@ export const V86Emulator = forwardRef<any, V86EmulatorProps>(({ onReady, onError
 
         const config = {
           serial_container: terminalRef.current,
-          wasm_path: "/v86.wasm",
+          wasm_path: wasmUrl,
           memory_size: 512 * 1024 * 1024,
           bios: { url: "bios/seabios.bin" },
           filesystem: {
@@ -187,7 +188,9 @@ export const V86Emulator = forwardRef<any, V86EmulatorProps>(({ onReady, onError
           // Update serial output
           setSerialOutput(prev => {
             const newOutput = prev + char;
-            emulator.checkTrigger(newOutput);
+            if (emulator.checkTrigger) {
+              emulator.checkTrigger(newOutput);
+            }
             return newOutput;
           });
           
