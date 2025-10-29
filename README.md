@@ -16,7 +16,7 @@ This project integrates the [v86 emulator](https://github.com/copy/v86) to provi
 
 - **BIOS Files**: SeaBIOS and VGA BIOS for hardware initialization
 - **Root filesystem**: Alpine Linux rootfs exposed via 9p (served from `public/images`)
-- **WebAssembly**: `v86.wasm` and loader `v86.js` for browser-based x86 emulation
+- **WebAssembly**: v86 emulator loaded from `node_modules/v86` package via Vite bundling
 
 ### Files Structure
 
@@ -25,12 +25,12 @@ public/
 ├── bios/
 │   ├── seabios.bin             # SeaBIOS for x86 emulation
 │   └── vgabios.bin             # VGA BIOS (graphics disabled at runtime)
-├── images/
-│   ├── alpine-fs.json          # Flat FS manifest used by v86 9p host
-│   ├── alpine-rootfs-flat/     # Flat Alpine rootfs chunk files
-│   └── alpine-state.bin        # Initial emulator state (faster boot)
-├── v86.js                      # v86 loader
-└── v86.wasm                    # v86 WebAssembly binary
+└── images/
+    ├── alpine-fs.json          # Flat FS manifest used by v86 9p host
+    ├── alpine-rootfs-flat/     # Flat Alpine rootfs chunk files (gitignored)
+    └── alpine-state.bin        # Initial emulator state (faster boot)
+
+Note: v86 WASM files are loaded from node_modules/v86 via Vite bundling.
 ```
 
 ## Getting Started
