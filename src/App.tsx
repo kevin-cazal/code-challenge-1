@@ -89,7 +89,9 @@ function App() {
       */
       console.log(`Writing code to ${filename}`);
       await v86EmulatorRef.current.writeFile(filename, code);
-      await v86EmulatorRef.current.serial0_send(`/opt/detect-language/run_tests.sh\n`);
+      
+      // Run tests using the wrapper script
+      await v86EmulatorRef.current.serial0_send(`/opt/detect-language/run_tests_wrapper.sh ${filename}\n`);
     }
   }
 
