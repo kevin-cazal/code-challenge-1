@@ -65,33 +65,51 @@ function App() {
     setIsRunning(true);
     setTestResult(null);
 
-    // Write the code to a file in the emulator
-    if (v86EmulatorRef.current && v86EmulatorRef.current.writeFile) {
-      if (v86EmulatorRef.current.clearFile) {
-        await v86EmulatorRef.current.clearFile(`/tmp/code_challenge/code.*`);
+    try {
+      // Write the code to a file in the emulator
+      if (v86EmulatorRef.current && v86EmulatorRef.current.writeFile) {
+        if (v86EmulatorRef.current.clearFile) {
+          await v86EmulatorRef.current.clearFile(`/tmp/code_challenge/code.*`);
+        }
+        const filename = `/tmp/code_challenge/code.${getLanguageExtension(language)}`;
+        /*
+        * TODO: Add a script to the Linux distribution to run the code and test the result.
+        * The script should be a shell script that reads a ".code" file and runs the code.
+        * ".code" file format is not defined yet.
+        * IDEA for an easy to parse format with a shell script:
+        * Line 1: Language
+        * Line 2: Timeout in seconds
+        * Line 4: User code to run (base64 encoded)
+        * Line 3: Expected output (base64 encoded) 
+        * TODO: Add this shell script to the Linux distribution.
+        * TODO: Update Alpine Linux distribution to add the musl-dev package to provide the standard C library headers.
+        * TODO: Fix lua support.
+        * TODO: NodeJS support. (QuickJS ?)
+        * TODO: microPython support ?
+        * TODO: replace GCC with TCC (Tiny C Compiler) for C support ?.
+        */
+        console.log(`Writing code to ${filename}`);
+        await v86EmulatorRef.current.writeFile(filename, code);
+
+        console.log(`Running tests using the wrapper script`);
+        console.log(`/opt/detect-language/run_tests_wrapper.sh ${filename}`);
+        // Run tests using the wrapper script
+        v86EmulatorRef.current.serial0_send(`/opt/detect-language/run_tests_wrapper.sh ${filename}\n`);
+        console.log(`Tests run complete`);
       }
-      const filename = `/tmp/code_challenge/code.${getLanguageExtension(language)}`;
-      /*
-      * TODO: Add a script to the Linux distribution to run the code and test the result.
-      * The script should be a shell script that reads a ".code" file and runs the code.
-      * ".code" file format is not defined yet.
-      * IDEA for an easy to parse format with a shell script:
-      * Line 1: Language
-      * Line 2: Timeout in seconds
-      * Line 4: User code to run (base64 encoded)
-      * Line 3: Expected output (base64 encoded) 
-      * TODO: Add this shell script to the Linux distribution.
-      * TODO: Update Alpine Linux distribution to add the musl-dev package to provide the standard C library headers.
-      * TODO: Fix lua support.
-      * TODO: NodeJS support. (QuickJS ?)
-      * TODO: microPython support ?
-      * TODO: replace GCC with TCC (Tiny C Compiler) for C support ?.
-      */
-      console.log(`Writing code to ${filename}`);
-      await v86EmulatorRef.current.writeFile(filename, code);
-      
-      // Run tests using the wrapper script
-      await v86EmulatorRef.current.serial0_send(`/opt/detect-language/run_tests_wrapper.sh ${filename}\n`);
+    } catch (error) {
+      console.error('Error running tests:', error);
+      setTestResult({
+        passed: false,
+        message: 'Test execution failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } finally {
+      // Reset running state after a delay to allow the command to be sent
+      // The actual test completion will be handled separately if needed
+      setTimeout(() => {
+        setIsRunning(false);
+      }, 500);
     }
   }
 

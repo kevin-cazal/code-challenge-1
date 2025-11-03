@@ -177,7 +177,7 @@ async function sendCommand(command: string): Promise<string> {
 
     const checkOutput = () => {
       // Check for command completion markers
-      if (serialOutputBuffer.includes('$ ') || serialOutputBuffer.includes('# ')) {
+      if (serialOutputBuffer.includes('#READY > ') || serialOutputBuffer.includes('$ ') || serialOutputBuffer.includes('# ')) {
         clearTimeout(timeout);
         resolve(serialOutputBuffer);
       } else {

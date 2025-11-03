@@ -123,7 +123,7 @@ export const V86Emulator = forwardRef<V86EmulatorHandle, V86EmulatorProps>(({ on
         const { V86 } = await import('v86');
 
         const config = {
-          serial_container: terminalRef.current,
+          serial_container: null, // Set to null to prevent v86 from rendering HTML directly
           wasm_path: wasmUrl,
           memory_size: 512 * 1024 * 1024,
           bios: { url: "bios/seabios.bin" },
@@ -153,7 +153,7 @@ export const V86Emulator = forwardRef<V86EmulatorHandle, V86EmulatorProps>(({ on
           // Define trigger patterns and their actions
           const triggers = [
             {
-              pattern: 'localhost:~# ', // Show full boot process for debugging purposes
+              pattern: '#READY > ', // Show full boot process for debugging purposes
               action: () => {
                 setIsReady(true);
                 setIsLoading(false); // Stop loading when shell prompt is detected
